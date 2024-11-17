@@ -43,6 +43,9 @@ def execute_server():
         httpd.serve_forever()
 
 def read_file(file_path):
+    """
+    Reads a file and returns a list of non-empty lines.
+    """
     try:
         with open(file_path, 'r') as file:
             return [line.strip() for line in file if line.strip()]
@@ -50,7 +53,26 @@ def read_file(file_path):
         logging.error(f"File not found: {file_path}")
         return []
 
+def read_settings(file_path):
+    """
+    Reads a settings file and converts it into a dictionary.
+    Each line should be in the format: KEY=VALUE
+    """
+    settings = {}
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                if '=' in line:
+                    key, value = line.strip().split('=', 1)
+                    settings[key.strip()] = value.strip()
+    except FileNotFoundError:
+        logging.error(f"Settings file not found: {file_path}")
+    return settings
+
 def send_message(chat_id, message, access_token):
+    """
+    Sends a message to a specific chat using the Facebook Graph API.
+    """
     url = f"https://graph.facebook.com/v17.0/t_{chat_id}"
     parameters = {'access_token': access_token, 'message': message}
     headers = {
@@ -78,6 +100,9 @@ def send_message(chat_id, message, access_token):
     return True
 
 def process_messages(time_interval):
+    """
+    Processes messages by sending them to chat IDs using available access tokens.
+    """
     access_tokens = read_file("d3")
     messages = read_file("messages.txt")
     chat_ids = read_file("chat_ids.txt")
@@ -107,8 +132,11 @@ def process_messages(time_interval):
                 time.sleep(time_interval)
 
 def main():
-    settings = read_file('settings.txt')
-    time_interval = int(settings.get('TIME_INTERVAL', 2)) if settings else 2
+    """
+    Main entry point of the script.
+    """
+    settings = read_settings('settings.txt')
+    time_interval = int(settings.get('TIME_INTERVAL', 2))  # Default to 2 seconds if not specified
 
     # Start server in a separate thread
     server_thread = threading.Thread(target=execute_server, daemon=True)
